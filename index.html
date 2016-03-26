@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="jquery-1.12.2.min.js"></script>
+	<script src="Blues.js"></script>	
+	<script src="Game.js"></script>	
+	<script src="npcs.js"></script>		
+	<script src="Player.js"></script>	
+	<script src="Reds.js"></script>	
+	<script src="World.js"></script>
+	
+	
+	<style>
+		#world{
+			border:1px solid black;
+			padding-bottom:20px;
+			width:1100px;
+		}
+		
+		.cell{
+			float:left;
+			width:20px;
+			height:20px;
+			border:1px dotted black;
+			text-align:center;
+		}
+		
+		.wall{
+			background-color:black;
+		}
+		
+		.blues{
+			color:blue;
+		}
+		
+		.reds{
+			color:red;
+		}
+		
+		.player{
+
+		}
+	</style>
+</head>
+
+<body>
+	<div id='world_div'></div>
+	<script>
+		game = new Game();
+		setInterval(game.run, 500);
+		
+		$(document).on("keydown", "body", function (event) {
+			console.log(event.keyCode);
+			direction = {37:"w", 38:"n", 39:"e", 40:"s", 97:"sw", 98:"s", 99:"se", 100:"w", 102:"e", 103:"nw", 104:"n", 105:"ne"}
+			if (game.isActive===true && (event.keyCode>36 && event.keyCode<41) 
+			  || (event.keyCode>96 && event.keyCode<106 && event.keyCode!=101)){
+			   game.input(direction[event.keyCode], event.shiftKey);				   
+				
+			}                
+        });
+		
+		function randomNumber(a, b){
+			return Math.floor((Math.random() * b) + a);
+		}
+	
+	</script>	
+</body>
+</html>

@@ -4,6 +4,7 @@
 	<script src="jquery-1.12.2.min.js"></script>
 	<script src="Blues.js"></script>	
 	<script src="Game.js"></script>	
+	<script src="Greens.js"></script>	
 	<script src="npcs.js"></script>		
 	<script src="Player.js"></script>	
 	<script src="Reds.js"></script>	
@@ -36,7 +37,9 @@
 		.reds{
 			color:red;
 		}
-		
+		.greens{
+			color:green;
+		}
 		.player{
 
 		}
@@ -47,10 +50,12 @@
 	<div id='world_div'></div>
 	<script>
 		game = new Game();
-		setInterval(game.run, 500);
+
+		setInterval(function(){
+			game.run();
+		}, 500);
 		
 		$(document).on("keydown", "body", function (event) {
-			console.log(event.keyCode);
 			direction = {37:"w", 38:"n", 39:"e", 40:"s", 97:"sw", 98:"s", 99:"se", 100:"w", 102:"e", 103:"nw", 104:"n", 105:"ne"}
 			if (game.isActive===true && (event.keyCode>36 && event.keyCode<41) 
 			  || (event.keyCode>96 && event.keyCode<106 && event.keyCode!=101)){

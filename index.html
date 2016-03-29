@@ -55,12 +55,11 @@
 			game.run();
 		}, 500);
 		
-		$(document).on("keydown", "body", function (event) {
+		$(document).on("keydown", "body", function (event) {			
 			direction = {37:"w", 38:"n", 39:"e", 40:"s", 97:"sw", 98:"s", 99:"se", 100:"w", 102:"e", 103:"nw", 104:"n", 105:"ne"}
 			if (game.isActive===true && (event.keyCode>36 && event.keyCode<41) 
-			  || (event.keyCode>96 && event.keyCode<106 && event.keyCode!=101)){
-			   game.input(direction[event.keyCode], event.shiftKey);				   
-				
+			  || (event.keyCode>96 && event.keyCode<106 && event.keyCode!=101)){			
+				game.input(direction[event.keyCode], event.shiftKey);				   
 			}                
         });
 		

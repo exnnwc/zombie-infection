@@ -147,7 +147,7 @@ function buildStructure(location){
 }
 
 function findSpotFromDirection(direction, location){
-	console.log(direction);
+	//console.log(direction);
 	if (direction===false || direction===undefined ){
 			return false;
 	}
@@ -198,7 +198,7 @@ function lookAround(centerLocation){
 		prevSpot=0;
 		distance=1;
 		while(looking){
-			console.log(this.directions[direction]);
+			//console.log(this.directions[direction]);
 			var nextSpot = this.findSpotFromDirection(this.directions[direction], newLocation);
 			if (nextSpot===false){
 				pov.push({direction:this.directions[direction], before:prevSpot, next:nextSpot, distance:distance, what:false});
@@ -301,7 +301,7 @@ function otherDirection(direction){
 }
 
 function openSpaceInThisDirection(newDirection, currentLocation){
-	console.log(newDirection, currentLocation, this.map);
+	//console.log(newDirection, currentLocation, this.map);
 	tries=0;
 	while (tries<5){
 		if (tries===0){			
@@ -311,10 +311,10 @@ function openSpaceInThisDirection(newDirection, currentLocation){
 		}else if (tries>=3){
 			prospectiveDirection = this.directions[this.directions.indexOf(newDirection)-(tries-2)];
 		}
-		console.log(prospectiveDirection);
+		//console.log(prospectiveDirection);
 		prospectiveSpot = this.findSpotFromDirection(prospectiveDirection, currentLocation);
-		console.log(prospectiveSpot, prospectiveSpot["x"], prospectiveSpot["y"]);
-		console.log(this.map);
+		//console.log(prospectiveSpot, prospectiveSpot["x"], prospectiveSpot["y"]);
+		//console.log(this.map);
 		if (prospectiveSpot!==false && this.map[prospectiveSpot["x"]][prospectiveSpot["y"]]===0){
 			return prospectiveDirection;
 		}

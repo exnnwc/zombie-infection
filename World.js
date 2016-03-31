@@ -5,6 +5,9 @@
 3 - blue
 4 - red
 5 - green
+6 - red -shooting
+7 - empty - bullet
+8 - green - shot
 */
 function World(sizeOfX, sizeOfY){
 	this.directions = ["n", "ne", "e", "se", "s", "sw", "w", "nw"];
@@ -12,6 +15,7 @@ function World(sizeOfX, sizeOfY){
 	this.sizeOfY = sizeOfY;
 	
 	this.buildHere = buildStructure;
+	this.createBulletTrail = createBulletTrail;
 	this.findSpotFromDirection = findSpotFromDirection;
 	this.lookAround = lookAround;
 	this.nearestHuman = nearestHuman;
@@ -22,6 +26,7 @@ function World(sizeOfX, sizeOfY){
 	this.openSpaceInThisDirection = openSpaceInThisDirection;
 	this.openSpot = fetchRandomOpenSpot;
 	this.otherDirection = otherDirection;
+	this.reset = resetMap;
 	this.show = displayWorld;
 	this.status = fetchNeighborStatus;
 	this.whichDirection=whichDirection;
@@ -42,6 +47,21 @@ function World(sizeOfX, sizeOfY){
 	this.show();
 }
 
+
+function createBulletTrail(beginLocation, endLocation){
+	this.map[beginLocation["x"]][beginLocation["y"]]=6;
+	this.map[endLocation["x"]][endLocation["y"]]=8;
+	intermediateLocation=beginLocation;
+	while (true){
+		if (intermediateLocation["x"]===endLocation["x"] && intermediateLocation["y"]===endLocation["y"]){
+			return;
+		}
+		intermediateLocation = this.findSpotFromDirection(this.whichDirection(intermediateLocation, endLocation), intermediateLocation);
+		if (this.map[intermediateLocation["x"]][intermediateLocation["y"]]==0){
+			this.map[intermediateLocation["x"]][intermediateLocation["y"]]=7;
+		}
+	}
+}
 function displayWorld(){	
 	worldDiv="<div id='world'>";
 	for(y=0;y<this.sizeOfY;y++){
@@ -54,11 +74,18 @@ function displayWorld(){
 				worldDiv = worldDiv + " player";
 			} else if (this.map[x][y]===3){
 				worldDiv = worldDiv + " blues";
-			} else if (this.map[x][y]===4){
+			} else if (this.map[x][y]===4 || (this.map[x][y]===6 && this.map[x][y]===8)){
 				worldDiv = worldDiv + " reds";
 			} else if (this.map[x][y]===5){
 				worldDiv = worldDiv + " greens";
-			} 
+			} else if (this.map[x][y]===7){
+				worldDiv = worldDiv + " bullet";
+			} else if (this.map[x][y]===6 || this.map[x][y]===8){
+				worldDiv = worldDiv + " shot";
+				if (this.map[x][y]===8){
+					worldDiv = worldDiv + " greens";
+				}
+			}
 			worldDiv = worldDiv + "'>"
 			if (this.map[x][y]===1){
 				worldDiv = worldDiv + "";
@@ -70,7 +97,13 @@ function displayWorld(){
 				worldDiv = worldDiv + "&nabla;";
 			} else if (this.map[x][y]===5){
 				worldDiv = worldDiv + "o";
-			} 
+			} else if (this.map[x][y]===6 ){
+				worldDiv = worldDiv + "&nabla;";
+			} else if (this.map[x][y]===7 ){
+				worldDiv = worldDiv + "*";
+			} else if (this.map[x][y]===8 ){
+				worldDiv = worldDiv + "o";
+			}
 			worldDiv = worldDiv + "</div>";
 		}
 		worldDiv = worldDiv + "</div>";
@@ -147,7 +180,7 @@ function buildStructure(location){
 }
 
 function findSpotFromDirection(direction, location){
-	//console.log(direction);
+	//console.log(direction, location);
 	if (direction===false || direction===undefined ){
 			return false;
 	}
@@ -231,6 +264,19 @@ function nearestHuman(currentLocation){
 	
 	return directionToNearestHuman;
 }
+function resetMap(){	
+	for(x=0;x<this.sizeOfX;x++){	
+		for(y=0;y<this.sizeOfY;y++){
+			if (this.map[x][y]===6){
+				this.map[x][y]=4;
+			} else if (this.map[x][y]===7){
+				this.map[x][y]=0;
+			} else if (this.map[x][y]===8){
+				this.map[x][y]=5;
+			} 
+		}
+	}
+}
 function humansInSight(currentLocation){
 	directions = this.lookAround(currentLocation);
 	humansInSight = new Array();
@@ -247,29 +293,7 @@ function humansInSight(currentLocation){
 	
 	
 }
-function whichDirection (currentLocation, newLocation){
-	northOrSouth=0;
-	eastOrWest=0;
-	if(currentLocation["y"]-newLocation["y"]===-1){
-		northOrSouth="n";	
-	} else if(currentLocation["y"]-newLocation["y"]===1){
-		northOrSouth="s";
-	}
-	
-	if(currentLocation["x"]-newLocation["x"]===-1){		
-		eastOrWest="w";	
-	} else if(currentLocation["x"]-newLocation["x"]===1){
-		
-		eastOrWest="e";
-	}
-	if (typeof northOrSouth===typeof eastOrWest){
-		return northOrSouth+eastOrWest;
-	} else if (northOrSouth!=0){
-		return northOrSouth;
-	} else if (eastOrWest!=0){
-		return eastOrWest;
-	}
-}
+
 
 function nearestZombie(currentLocation){
 	directions = this.lookAround(currentLocation);
@@ -321,4 +345,29 @@ function openSpaceInThisDirection(newDirection, currentLocation){
 		tries++;
 	}
 	return false;
+}
+
+function whichDirection (currentLocation, newLocation){
+	
+	northOrSouth=0;
+	eastOrWest=0;
+	if(currentLocation["y"]-newLocation["y"]>0){
+		northOrSouth="n";	
+	} else if(currentLocation["y"]-newLocation["y"]<0){
+		northOrSouth="s";
+	}
+	
+	if(currentLocation["x"]-newLocation["x"]>0){		
+		eastOrWest="w";	
+	} else if(currentLocation["x"]-newLocation["x"]<0){
+		
+		eastOrWest="e";
+	}
+	if (typeof northOrSouth===typeof eastOrWest){
+		return northOrSouth+eastOrWest;
+	} else if (northOrSouth!=0){
+		return northOrSouth;
+	} else if (eastOrWest!=0){
+		return eastOrWest;
+	} 
 }

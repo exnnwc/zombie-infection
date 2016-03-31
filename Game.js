@@ -1,18 +1,19 @@
 function Game(){
-	this.world = new World (50, 25);
+	this.world = new World (40, 20);
 	this.player = new Player({x:0, y:0});
 	this.reds = new Reds();
 	this.blues = new Blues();
 	this.greens = new Greens();
 	this.chanceToSeeZombie=4;
-	
+
 	this.isActive=true;
 	this.date = new Date();
 	this.lastMove=this.date.getTime();
 	this.greensMoved=false;
-	this.blue_percent = 3;
+	this.blue_percent = 4;
 	this.red_percent = 1;
-	this.structure_percent = 8;
+	this.statusMsgs = new Array();
+	this.structure_percent = 4;
 	
 	max_num_of_structures = (this.world.sizeOfX * this.world.sizeOfX) * (this.structure_percent/100);	
 	max_num_of_blues = (this.world.sizeOfX * this.world.sizeOfX) * (this.blue_percent/100);	
@@ -22,6 +23,7 @@ function Game(){
 	this.input = playerInput;
 	this.run = run;
 	this.seeds = fetchSeeds;
+	this.gameOver = gameOver;
 	this.generateStructures = generateStructures;
 	this.moveBlue = moveBlue;
 	this.moveBlues = moveBlues;
@@ -30,6 +32,9 @@ function Game(){
 	this.moveReds = moveReds;
 	this.shootZombie = shootZombie;
 	this.spawnGreen = spawnGreen;
+	this.updateStatusDiv = updateStatusDiv;
+	this.bluesWander = bluesWander;
+	this.won = won;
 	
 	this.world.map[this.player.pos["x"]][this.player.pos["y"]]=2;
 	
@@ -53,16 +58,25 @@ function Game(){
 	}
 	this.world.show();
 }
-
+function bluesWander(blue){
+		status = this.world.status(this.blues.locations[blue]);		
+	if (status[0]>0){
+		openNeighbor=this.world.openNeighbor(this.blues.locations[blue]);
+		
+		if(randomNumber(1,10)===1 && openNeighbor!==false && openNeighbor!==undefined){		
+			this.moveBlue(blue, openNeighbor);
+		}
+	}
+}
 function escapeFromZombies(blue, directionToNearestZombie){
 	this.blues.panicked[blue]++;			
 	newDirection = this.world.openSpaceInThisDirection(this.world.otherDirection(directionToNearestZombie), this.blues.locations[blue]);
-	console.log(newDirection);
 	newLocation = newDirection
 	  ? this.world.findSpotFromDirection(newDirection, this.blues.locations[blue])
 	  : this.world.openNeighbor(this.blues.locations[blue]);
-	console.log("ESCAPING to", newLocation);
-	this.moveBlue(blue, newLocation);
+	if (newLocation!==undefined){
+		this.moveBlue(blue, newLocation);
+	}
 }
 function fetchSeeds(num_of_seeds){
 	seeds = new Array();
@@ -72,6 +86,13 @@ function fetchSeeds(num_of_seeds){
 	return seeds;
 }
 
+function gameOver(){
+	this.updateStatusDiv("<span style='color:red;'>Game Over!</span>");
+	$("#game_over_div").show();
+	this.isActive=false;
+	
+	
+}
 function generateStructures(max_num_of_structures){
 	num_of_seeds=0;	
 	while (num_of_seeds<max_num_of_structures){
@@ -87,13 +108,21 @@ function generateStructures(max_num_of_structures){
 }
 
 function run(){
-	this.moveBlues();
+	this.world.reset();
 	this.moveReds();
-	if (!this.greensMoved){
-		this.moveGreens();	
-		this.greensMoved=true;
-	} else if (this.greensMoved){
-		this.greensMoved=false;
+	if (this.isActive){
+		
+		this.moveBlues();
+		
+		if (!this.greensMoved){
+			this.moveGreens();	
+			this.greensMoved=true;
+		} else if (this.greensMoved){
+			this.greensMoved=false;
+		}
+		if (this.greens.locations.length===this.reds.locations.length && this.reds.length===0){
+			this.won();
+		}
 	}
 	this.world.show();
 }
@@ -103,7 +132,7 @@ function start(){
 }
 function playerInput(inputDirection, shifting){
 	date = new Date();	
-	timeSinceLastMove = Math.floor((date.getTime() - this.lastMove)/750);
+	timeSinceLastMove = Math.floor((date.getTime() - this.lastMove)/500);
 	
 	if (timeSinceLastMove>0 && this.world.directions.indexOf(inputDirection)!==-1){
 		this.lastMove=date.getTime();
@@ -145,6 +174,7 @@ function moveBlues(){
 		} else if (directionToNearestZombie===false){						
 			allHumansInSight = this.world.humansInSight(this.blues.locations[blue]);			
 			if (allHumansInSight!==false){
+				blueMoved=false;
 				for (human=0;human<allHumansInSight.length;human++){
 					otherBlue = this.blues.who(allHumansInSight[human]["where"]);
 					if (this.blues.panicked[otherBlue]>0){
@@ -173,8 +203,10 @@ function moveBlues(){
 						*/
 					}					
 				}
+				if (!blueMoved){
+					this.bluesWander(blue);
+				}
 			} else if (allHumansInSight===false){
-				console.log(this.blues.panicked[blue]);
 				if (this.blues.panicked[blue]>0){
 					newDirection = this.world.openSpaceInThisDirection(this.blues.motion[blue], this.blues.locations[blue]);
 					if (newDirection===false){
@@ -186,19 +218,11 @@ function moveBlues(){
 					if (newDirection!==this.blues.motion[blue]){
 						this.blues.motion[blue]=newDirection;
 					}
-					console.log("PANICKING to", newLocation);
 					this.moveBlue(blue, newLocation);
 					
-				} else if (this.blues.panicked===0){
-					status = this.world.status(this.blues.locations[blue]);		
-					console.log("STATUS", status);
-					if (status[5]!==0){
-						openNeighbor=this.world.openNeighbor(this.blues.locations[blue]);
-						if(randomNumber(1,2)===1 && openNeighbor!==false && openNeighbor!==undefined){		
-							console.log("WANDERING to", openNeighbor);
-							this.moveBlue(openNeighbor);
-						}
-					}
+				} else if (this.blues.panicked[blue]===0){
+					this.bluesWander(blue);
+
 				}
 			}
 			if (this.blues.panicked[blue]>0){
@@ -235,8 +259,8 @@ function moveReds(){
 	for(red in this.reds.locations){
 		directionToNearestZombie = this.world.nearestZombie(this.reds.locations[red]);
 		if (this.reds.gunIsEmpty[red]){
+			this.world.map[this.reds.locations[red]["x"]][this.reds.locations[red]["y"]]=4;
 			this.reds.gunIsEmpty[red]=false;
-			console.log("Red #" + red + " is reloading.");			
 		} else if (directionToNearestZombie===false){			
 			allHumansInSight = this.world.humansInSight(this.reds.locations[red]);
 			if (allHumansInSight===false && this.reds.alert[red]>0){				
@@ -255,16 +279,13 @@ function moveReds(){
 		} else if (directionToNearestZombie!==false){
 		
 			pov = this.world.lookAround(this.reds.locations[red]);
-			console.log(this.reds.alert[red], " Zombie is ", pov[this.world.directions.indexOf(directionToNearestZombie)]["direction"]); 
 			
 			if (this.reds.alert[red]>0){
-				console.log("RED ALERT");				
 				this.shootZombie(red, pov[this.world.directions.indexOf(directionToNearestZombie)]["next"], 
 					  pov[this.world.directions.indexOf(directionToNearestZombie)]["distance"]);
 				this.reds.alert[red]++;
 			} 
 			if (this.reds.alert[red]===0){
-				console.log("RED NOT ALERT");
 				if (randomNumber(1,this.chanceToSeeZombie/2)===1){
 					this.shootZombie(red, pov[this.world.directions.indexOf(directionToNearestZombie)]["next"], 
 					  pov[this.world.directions.indexOf(directionToNearestZombie)]["distance"]);
@@ -282,24 +303,28 @@ function shootZombie(red, zombieLocation, distance){
 	if (this.reds.gunIsEmpty[red]){
 		return;
 	}
+	this.world.createBulletTrail(this.reds.locations[red], zombieLocation);
+	
 	this.reds.gunIsEmpty[red]=true;
 	successfulShot=false;
 	var message = "Red @ (" + redLocation["x"] + ", " + redLocation["y"] + ") shot at zombie @ (" + zombieLocation["x"] +  ", " 
 	  + zombieLocation["y"] + ").";
-	if (randomNumber(1, distance)===1){
+	if (randomNumber(1, distance*2)===1){
 		successfulShot=true;
-		message = message + "Successfully killed!";		
+		message = message + " <span style='font-weight:bold;color:red;'>Successfully killed!</span>";		
 	} else {
-		message = message + "Failed!";
+		message = message + " <span style='font-weight:bold;'>Failed!</span>";
 	}
-	if (zombieLocation===this.player.pos && successfulShot){
+
+	if (zombieLocation["x"]===this.player.pos["x"] && zombieLocation["y"]===this.player.pos["y"] && successfulShot){
 		message = message + "That was you! LOL";
-		//this.gameOver();
-	} else if (zombieLocation!==this.player.pos && successfulShot){
+		this.updateStatusDiv(message);
+		this.gameOver();
+	} else if (!(zombieLocation["x"]===this.player.pos["x"] && zombieLocation["y"]===this.player.pos["y"]) && successfulShot){
 		this.greens.kill(zombieLocation);
 		this.world.map[zombieLocation["x"]][zombieLocation["y"]]=0;
-	}
-	console.log(message);
+	} 
+	this.updateStatusDiv(message);
 		
 }
 function spawnGreen(location){		
@@ -312,3 +337,20 @@ function spawnGreen(location){
 	this.greens.add(location);
 }
 
+function updateStatusDiv(currentStatusMsg){	
+	if (this.isActive){
+		this.statusMsgs.push(currentStatusMsg);
+	
+		var string = "";
+		for(status=this.statusMsgs.length-1;status>this.statusMsgs.length-11;status--){
+			if (this.statusMsgs[status]!==undefined){
+				string = string + "<div>" + this.statusMsgs[status] + "</div>";
+			}
+		}	
+		$("#status_div").html(string);	
+	}
+}
+function won(){
+	this.isActive=false;
+	$("#win_div").show();		
+}
